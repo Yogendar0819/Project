@@ -11,8 +11,9 @@ rind_t *rind_create(const char *name, int age, int milkperday) {
      || age<0||age>30
      || milkperday<15||milkperday>40)
         return NULL;
-    rind_t *r = calloc(1, sizeof *r);
+    rind_t *r = malloc(sizeof *r);
     if (!r) return NULL;
+    memset(r, 0, sizeof *r);
     strncpy(r->name, name, RIND_NAME_LEN);
     r->name[RIND_NAME_LEN] = '\0';
     r->age        = age;

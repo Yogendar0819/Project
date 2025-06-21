@@ -17,22 +17,31 @@ static void flush_stdin(void) {
 /* read a line and strip newline */
 static int read_line(char *buf, int len) {
     if (!fgets(buf, len, stdin)) return 0;
-    buf[strcspn(buf, "\n")] = '\0';
+    for (int i = 0; i < len; ++i) {
+        if (buf[i] == '\n' || buf[i] == '\0') {
+            buf[i] = '\0';
+            break;
+        }
+    }
     return 1;
 }
 
 /* parse int safely */
 static int read_int(const char *prompt, int *out, int min, int max) {
-    char buf[32];
     while (1) {
+        int v;
         printf("%s", prompt);
-        if (!read_line(buf, sizeof buf)) return 0;
-        char *end; long v = strtol(buf, &end, 10);
-        if (*end!='\0' || v<min || v>max) {
+        if (scanf("%d", &v) != 1) {
+            flush_stdin();
             printf("Ungueltige Eingabe!\n");
             continue;
         }
-        *out = (int)v;
+        flush_stdin();
+        if (v < min || v > max) {
+            printf("Ungueltige Eingabe!\n");
+            continue;
+        }
+        *out = v;
         return 1;
     }
 }
@@ -154,7 +163,9 @@ static int act_load_rinder(ll_t **pr) {
     *pr = NULL;
     size_t n; fread(&n, sizeof n, 1, f);
     for (size_t i=0; i<n; i++) {
-        rind_t *r = calloc(1, sizeof *r);
+        rind_t *r = malloc(sizeof *r);
+        if (!r) { fclose(f); return 1; }
+        memset(r, 0, sizeof *r);
         fread(r->name, sizeof r->name, 1, f);
         fread(&r->age, sizeof r->age, 1, f);
         fread(&r->milkperday, sizeof r->milkperday, 1, f);
@@ -202,10 +213,17 @@ void app_menu(ll_t **r) {
             printf("%d) %s\n", i+1, A[i].desc);
         printf("Auswahl (1-%d): ", N);
 
-        char buf[16];
-        if (!fgets(buf, sizeof buf, stdin)) break;
-        int c = strtol(buf, NULL, 10);
-        if (c<1 || c>N) { puts("Ungueltig!"); continue; }
-        if (!A[c-1].func(r)) break;
+        int choice;
+        if (scanf("%d", &choice) != 1) {
+            flush_stdin();
+            puts("Ungueltig!");
+            continue;
+        }
+        flush_stdin();
+        if (choice < 1 || choice > N) {
+            puts("Ungueltig!");
+            continue;
+        }
+        if (!A[choice - 1].func(r)) break;
     }
 }
